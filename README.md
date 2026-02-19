@@ -32,23 +32,21 @@ Additional docs: `docs/ARCHITECTURE.md`.
 - PHP 8.1+ recommended.
 - Follow Moodle coding guidelines.
 - All strings must go through language packs in `lang/en/local_firma.php` (and translations).
-- Use `	ool_task
+- Use `ool_task un_from_cli` to manually trigger scheduled reminders for testing.
 
+## License
+MIT for plugin code. External libraries retain their respective licenses (TCPDF LGPLv3, FPDI MIT, Endroid QRCode MIT).
 
-
-
-MIT for plugin code. External libraries retain their respective licenses (TCPDF LGPLv3, FPDI MIT, Endroid QRCode MIT).## Licenseun_from_cli` to manually trigger scheduled reminders for testing.
-
-## Despliegue Docker
+# Despliegue Docker
 
 Este repositorio incluye configuración completa de Docker Compose para desplegar Moodle con arquitectura PHP-FPM + Nginx + MariaDB.
 
-### Arquitectura
+## Arquitectura
 - **PHP-FPM 8.2**: Imagen personalizada con todas las extensiones requeridas por Moodle
 - **Nginx 1.24**: Servidor web con configuración optimizada para Moodle
 - **MariaDB 10.11**: Base de datos con charset utf8mb4
 
-### Estructura de archivos
+## Estructura de archivos
 ```
 docker-compose.yml       # Orquestación de servicios
 .env                     # Variables de entorno (NO COMMITEAR)
@@ -64,7 +62,7 @@ nginx/
   sites/moodle.conf      # Virtual host de Moodle
 ```
 
-### Credenciales de producción
+## Credenciales de producción
 ```
 Servidor: 10.20.10.3:7080
 DB Root Password: StrongRootPassword123!
@@ -75,7 +73,7 @@ Moodle Admin: admin
 Moodle Admin Password: AdminSecurePass123!
 ```
 
-### Despliegue
+## Despliegue
 
 **Desde Windows (PowerShell):**
 ```powershell
@@ -90,13 +88,12 @@ chmod +x *.sh
 ./deploy_new_moodle.sh
 ```
 
-### Restauración de base de datos
+## Restauración de base de datos
 Si necesitas restaurar un backup previo:
 ```bash
 docker-compose exec -T db mysql -u root -pStrongRootPassword123! moodle_production < /tmp/backup_moodle_db.sql
 ```
 
-### Comandos útiles
 ```bash
 # Ver logs
 docker-compose logs -f
@@ -135,3 +132,6 @@ Después del despliegue, accede a `http://10.20.10.3:7080` y completa el instala
 - Proyecto creado y mantenido por **Daniel Collao Vivanco**.
 - Portafolio y código fuente: https://github.com/git-dcollao
 - Contacto directo: daniel.collao@gmail.com
+=======
+# 06FirmaMoodle
+>>>>>>> 0bca94fea1ea85c58aa9178ff0bb389fb5e3523f
