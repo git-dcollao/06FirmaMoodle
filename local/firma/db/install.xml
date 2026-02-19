@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/firma/db" VERSION="2026021300" COMMENT="Database schema for local_firma plugin" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://moodledev.io/docs/apis/core/dml/database/install" >
+    <TABLES>
+        <TABLE NAME="local_firma_templates" COMMENT="Template definitions per course" >
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+                <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+                <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" />
+                <FIELD NAME="description" TYPE="text" NOTNULL="false" />
+                <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" />
+                <FIELD NAME="type" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="module" />
+                <FIELD NAME="active" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" />
+                <FIELD NAME="usercreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+                <FIELD NAME="usermodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+                <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+                <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id" />
+            </KEYS>
+            <INDEXES>
+                <INDEX NAME="type_active_idx" UNIQUE="false" FIELDS="type,active" />
+            </INDEXES>
+        </TABLE>
+
+        <TABLE NAME="local_firma_templatever" COMMENT="Template version metadata and files" >
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+                <FIELD NAME="templateid" TYPE="int" LENGTH="10" NOTNULL="true" />
+                <FIELD NAME="version" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" />
+                <FIELD NAME="fileid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+                <FIELD NAME="fieldsjson" TYPE="text" NOTNULL="false" />
+                <FIELD NAME="requiredactivitiesjson" TYPE="text" NOTNULL="false" />
+                <FIELD NAME="completionrule" TYPE="char" LENGTH="50" NOTNULL="true" DEFAULT="all" />
+                <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="draft" />
+                <FIELD NAME="usercreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+                <KEY NAME="templateid" TYPE="foreign" FIELDS="templateid" REFTABLE="local_firma_templates" REFFIELDS="id" />
+            </KEYS>
+            <INDEXES>
+                <INDEX NAME="template_version_idx" UNIQUE="true" FIELDS="templateid,version" />
+            </INDEXES>
+        </TABLE>
+
+        <TABLE NAME="local_firma_signatures" COMMENT="Signature evidence per user/template version" >
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+                <FIELD NAME="templateversionid" TYPE="int" LENGTH="10" NOTNULL="true" />
+                <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" />
+                <FIELD NAME="signedpdfid" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" />
+                <FIELD NAME="signedat" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" />
+                <FIELD NAME="token" TYPE="char" LENGTH="64" NOTNULL="true" />
+                <FIELD NAME="ip" TYPE="char" LENGTH="45" NOTNULL="false" />
+                <FIELD NAME="useragent" TYPE="char" LENGTH="255" NOTNULL="false" />
+                <FIELD NAME="signaturehash" TYPE="char" LENGTH="64" NOTNULL="false" />
+                <FIELD NAME="pdfhash" TYPE="char" LENGTH="64" NOTNULL="false" />
+                <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="pending" />
+                <FIELD NAME="completiondata" TYPE="text" NOTNULL="false" />
+                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+                <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+                <KEY NAME="templateversionid" TYPE="foreign" FIELDS="templateversionid" REFTABLE="local_firma_templatever" REFFIELDS="id" />
+                <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id" />
+            </KEYS>
+            <INDEXES>
+                <INDEX NAME="token_idx" UNIQUE="true" FIELDS="token" />
+                <INDEX NAME="user_status_idx" UNIQUE="false" FIELDS="userid,status" />
+            </INDEXES>
+        </TABLE>
+
+        <TABLE NAME="local_firma_reminders" COMMENT="Reminder log per signature" >
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+                <FIELD NAME="signatureid" TYPE="int" LENGTH="10" NOTNULL="true" />
+                <FIELD NAME="sentat" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+                <FIELD NAME="type" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="initial" />
+                <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="sent" />
+                <FIELD NAME="message" TYPE="text" NOTNULL="false" />
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+                <KEY NAME="signatureid" TYPE="foreign" FIELDS="signatureid" REFTABLE="local_firma_signatures" REFFIELDS="id" />
+            </KEYS>
+        </TABLE>
+
+        <TABLE NAME="local_firma_progress" COMMENT="Custom per-activity progress" >
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+                <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" />
+                <FIELD NAME="cmid" TYPE="int" LENGTH="10" NOTNULL="true" />
+                <FIELD NAME="templateversionid" TYPE="int" LENGTH="10" NOTNULL="true" />
+                <FIELD NAME="progress" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="0" />
+                <FIELD NAME="lastupdated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" />
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+                <KEY NAME="templateversionid" TYPE="foreign" FIELDS="templateversionid" REFTABLE="local_firma_templatever" REFFIELDS="id" />
+                <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id" />
+            </KEYS>
+            <INDEXES>
+                <INDEX NAME="uniq_user_cmid" UNIQUE="true" FIELDS="userid,cmid,templateversionid" />
+            </INDEXES>
+        </TABLE>
+    </TABLES>
+</XMLDB>

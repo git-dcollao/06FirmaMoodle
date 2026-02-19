@@ -1,0 +1,65 @@
+services:
+  # MariaDB Database
+  db:
+    image: mariadb:10.11
+    container_name: moodle-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-RootPass123!}
+      MYSQL_DATABASE: ${DB_NAME:-moodle}
+      MYSQL_USER: ${DB_USER:-moodleuser}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-MoodlePass123!}
+    volumes:
+      - db_data:/var/lib/mysql
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --transaction-isolation=READ-COMMITTED
+      --innodb-file-per-table=1
+      --skip-innodb-read-only-compressed
+    networks:
+      - moodle-network
+
+  # PHP-FPM 8.2
+  php:
+    build:
+      context: ./php
+    container_name: moodle-php
+    restart: always
+    volumes:
+      - ./html:/var/www/html
+      - moodledata:/var/www/moodledata
+    command: sh -c "chown -R www-data:www-data /var/www/moodledata && php-fpm"
+    expose:
+      - 9000
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASSWORD}
+    networks:
+      - moodle-network
+
+  # Nginx
+  web:
+    image: nginx:1.24-alpine
+    container_name: moodle-web
+    restart: always
+    ports:
+      - "${MOODLE_PORT}:80"
+    volumes:
+      - ./html:/var/www/html
+      - ./nginx/sites/moodle.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - moodle-network
+    depends_on:
+      - php
+
+volumes:
+  db_data:
+  moodledata:
+
+networks:
+  moodle-network:
+    driver: bridge

@@ -1,0 +1,25 @@
+{
+    "name": "firma/moodle-local-firma",
+    "description": "Moodle local plugin for legally compliant digital signatures with PDF templates and QR verification.",
+    "type": "moodle-local",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Daniel Collao Vivanco",
+            "email": "daniel@example.com",
+            "homepage": "https://github.com/danielcollao",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "tecnickcom/tcpdf": "^6.7",
+        "setasign/fpdi": "^2.6",
+        "endroid/qr-code": "^4.8 || ^5.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "local_firma\\": "classes/"
+        }
+    }
+}
