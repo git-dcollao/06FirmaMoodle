@@ -140,6 +140,27 @@ class template_manager {
     }
 
     /**
+     * Updates an existing version (PDF + metadata).
+     *
+     * @param stdClass $version
+     * @param stdClass $data
+     * @return void
+     * @throws dml_exception
+     */
+    public function update_version(stdClass $version, stdClass $data): void {
+        global $USER;
+        $record = (object) [
+            'id' => $version->id,
+            'version' => $data->version,
+            'fieldsjson' => json_encode($this->build_fields_payload($data)),
+            'requiredactivitiesjson' => json_encode($this->extract_required_activities($data)),
+            'usermodified' => $USER->id,
+            'timemodified' => time(),
+        ];
+        $this->db->update_record('local_firma_templatever', $record);
+    }
+
+    /**
      * Updates the field layout for an existing version.
      */
     public function update_version_fields(int $versionid, array $fields): void {
@@ -229,10 +250,18 @@ class template_manager {
         }
 
         $fields = [];
+        // Important: Moodle form repeat elements return arrays with numeric indices.
+        // We iterate using fieldlabel as the base, assuming all arrays are aligned by index.
         foreach ($data->fieldlabel as $idx => $label) {
+            
+            // Fix: fieldvalue sometimes comes empty if not filled, but source is selected.
+            // Also, fieldsource might be missing if default is used, but should be there if rendered.
+            
+            $source = $data->fieldsource[$idx] ?? 'fullname'; // Default in form is fullname
+            
             $fields[] = [
                 'label' => $label,
-                'source' => $data->fieldsource[$idx] ?? 'customtext',
+                'source' => $source,
                 'page' => (int)($data->fieldpage[$idx] ?? 1),
                 'x' => (float)($data->fieldx[$idx] ?? 0),
                 'y' => (float)($data->fieldy[$idx] ?? 0),
@@ -269,18 +298,43 @@ class template_manager {
         }
 
         $options = array_keys($this->get_field_sources());
-        $allowed = array_flip($options);
 
         $clean = [];
         foreach ($fields as $field) {
             $label = trim(clean_param($field['label'] ?? '', PARAM_TEXT));
-            if ($label === '') {
+            $source = trim($field['source'] ?? '');
+
+            // Validar source: debe estar en la lista de opciones o ser un campo de perfil.
+            $valid = in_array($source, $options, true) || strpos($source, 'profile:') === 0;
+            if (!$valid || $source === '') {
+                $source = 'fullname';
+            }
+
+            // Descartar sólo filas completamente vacías (formulario repeat_elements sin rellenar).
+            $is_empty_row = (
+                $label === ''
+                && empty($field['value'])
+                && (float)($field['x'] ?? 0) == 0
+                && (float)($field['y'] ?? 0) == 0
+                && in_array($source, ['fullname', 'customtext'], true)
+            );
+            if ($is_empty_row) {
                 continue;
             }
 
-            $source = $field['source'] ?? 'customtext';
-            if (!isset($allowed[$source])) {
-                $source = 'customtext';
+            // Si la etiqueta está vacía, generarla automáticamente desde el nombre del origen.
+            if ($label === '') {
+                if (strpos($source, 'profile:') === 0) {
+                    $parts = explode(':', $source);
+                    $label = 'Perfil: ' . end($parts);
+                } else {
+                    $stringkey = 'field_source_' . $source;
+                    if (get_string_manager()->string_exists($stringkey, 'local_firma')) {
+                        $label = get_string($stringkey, 'local_firma');
+                    } else {
+                        $label = ucfirst($source);
+                    }
+                }
             }
 
             $clean[] = [

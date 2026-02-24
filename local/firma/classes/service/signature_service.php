@@ -289,7 +289,14 @@ class signature_service {
             case 'lastname':
                 return $user->lastname ?? '';
             case 'idnumber':
-                return $user->idnumber ?? '';
+                // Debugging: check if idnumber is empty
+                $idnumber = $user->idnumber ?? '';
+                if (empty($idnumber)) {
+                     // Try to fetch again if missing
+                     $u = \core_user::get_user($user->id);
+                     return $u->idnumber ?? '';
+                }
+                return $idnumber;
             case 'email':
                 return $user->email ?? '';
             case 'coursefullname':
@@ -299,9 +306,16 @@ class signature_service {
             case 'customtext':
                 return $field['value'] ?? '';
             default:
-                if (str_starts_with($source, 'profile:')) {
-                    $key = substr($source, 8);
-                    return $profiledata[$key] ?? '';
+                if (strpos($source, 'profile:') === 0) {
+                    $shortname = substr($source, 8);
+                    // Primero buscar en los datos de perfil cargados.
+                    if (isset($profiledata[$shortname])) {
+                        return (string)$profiledata[$shortname];
+                    }
+                    // Si no está, intentar buscar directamente en el objeto usuario (por si acaso).
+                    if (isset($user->$shortname)) {
+                        return (string)$user->$shortname;
+                    }
                 }
                 return '';
         }
@@ -311,8 +325,13 @@ class signature_service {
      * Returns custom profile data indexed by shortname.
      */
     protected function fetch_profile_data(int $userid): array {
-        $record = profile_user_record($userid, false) ?? new stdClass();
-        return (array)$record;
+        // Obtenemos el registro de usuario completo con los campos de perfil inyectados.
+        $user = \core_user::get_user($userid);
+        if ($user) {
+            profile_load_data($user);
+            return (array)$user;
+        }
+        return [];
     }
 
     protected function write_temp_file(string $prefix, string $binary): string {

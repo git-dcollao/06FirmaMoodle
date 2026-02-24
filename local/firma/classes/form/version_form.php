@@ -39,7 +39,30 @@ class version_form extends \moodleform {
         $mform->setType('version', PARAM_INT);
 
         $mform->addElement('filemanager', 'pdffile_filemanager', get_string('form_pdffile', 'local_firma'), null, $fileoptions);
-        $mform->addRule('pdffile_filemanager', null, 'required', null, 'client');
+        if (empty($this->_customdata['versionid'])) {
+            $mform->addRule('pdffile_filemanager', null, 'required', null, 'client');
+        } else if (!empty($this->_customdata['pdf_width']) && !empty($this->_customdata['pdf_height'])) {
+            // Mostrar información de dimensiones si está disponible.
+            $w = $this->_customdata['pdf_width'];
+            $h = $this->_customdata['pdf_height'];
+            $wpx = $this->_customdata['pdf_width_px'] ?? 0;
+            $hpx = $this->_customdata['pdf_height_px'] ?? 0;
+            $orientation = $this->_customdata['pdf_orientation'] ?? 'P';
+            
+            $msg = get_string('pdf_dimensions_info', 'local_firma', (object)[
+                'width' => $w, 
+                'height' => $h, 
+                'widthpx' => $wpx, 
+                'heightpx' => $hpx, 
+                'orientation' => $orientation
+            ]);
+            
+            // Fallback si la cadena no existe aún
+            if (strpos($msg, '[[') === 0) {
+                 $msg = "Dimensiones del documento PDF (pág. 1): <strong>{$w}mm</strong> (~{$wpx}px) x <strong>{$h}mm</strong> (~{$hpx}px) (Orientación: {$orientation})";
+            }
+            $mform->addElement('static', 'pdfinfo', '', $msg);
+        }
 
         $mform->addElement('autocomplete', 'requiredactivities', get_string('form_requiredactivities', 'local_firma'), $activities, [
             'multiple' => true,
@@ -59,6 +82,7 @@ class version_form extends \moodleform {
 
         $repeatarray[] = $mform->createElement('select', 'fieldsource', get_string('field_source', 'local_firma'), $fieldoptions);
         $repeatoptions['fieldsource']['default'] = 'fullname';
+        $repeatoptions['fieldsource']['type'] = PARAM_RAW;
 
         $repeatarray[] = $mform->createElement('static', 'coordlabel', '', '<strong>' . get_string('fieldeditor_coordinates', 'local_firma') . '</strong>');
 
@@ -67,12 +91,12 @@ class version_form extends \moodleform {
         $repeatoptions['fieldpage']['default'] = 1;
 
         $repeatarray[] = $mform->createElement('text', 'fieldx', get_string('field_x', 'local_firma'), ['size' => 5]);
-        $repeatoptions['fieldx']['type'] = PARAM_INT;
-        $repeatoptions['fieldx']['default'] = 0;
+        $repeatoptions['fieldx']['type'] = PARAM_RAW;
+        // $repeatoptions['fieldx']['default'] = 0;
 
         $repeatarray[] = $mform->createElement('text', 'fieldy', get_string('field_y', 'local_firma'), ['size' => 5]);
-        $repeatoptions['fieldy']['type'] = PARAM_INT;
-        $repeatoptions['fieldy']['default'] = 0;
+        $repeatoptions['fieldy']['type'] = PARAM_RAW;
+        // $repeatoptions['fieldy']['default'] = 0;
 
         $repeatarray[] = $mform->createElement('static', 'sizelabel', '', '<strong>' . get_string('field_size', 'local_firma') . '</strong>');
 
@@ -103,5 +127,38 @@ class version_form extends \moodleform {
         $mform->addElement('static', 'fieldhelp', '', get_string('field_help', 'local_firma'));
 
         $this->add_action_buttons(true, get_string('savechanges'));
+    }
+
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+        
+        // Validar que las coordenadas no excedan el tamaño de la página si conocemos las dimensiones.
+        if (!empty($this->_customdata['pdf_width']) && !empty($this->_customdata['pdf_height'])) {
+            $max_w = (float)$this->_customdata['pdf_width'];
+            $max_h = (float)$this->_customdata['pdf_height'];
+            
+            // Los campos repetidos vienen como arrays en $data (ej: fieldx[0], fieldx[1]...)
+            // Nota: En un form con repeat_elements, los índices pueden ser numéricos directos si no están en grupo,
+            // pero moodleform flatten los arrays. Los elementos repetidos suelen llamarse 'fieldx' y ser un array.
+            
+            if (isset($data['fieldx'])) {
+                foreach ($data['fieldx'] as $key => $val) {
+                    $x = (float)$val;
+                    if ($x > $max_w) {
+                        $errors["fieldx[{$key}]"] = get_string('error_coordinate_out_of_bounds', 'local_firma', $max_w);
+                    }
+                }
+            }
+            if (isset($data['fieldy'])) {
+                foreach ($data['fieldy'] as $key => $val) {
+                    $y = (float)$val;
+                    if ($y > $max_h) {
+                        $errors["fieldy[{$key}]"] = get_string('error_coordinate_out_of_bounds', 'local_firma', $max_h);
+                    }
+                }
+            }
+        }
+        
+        return $errors;
     }
 }
