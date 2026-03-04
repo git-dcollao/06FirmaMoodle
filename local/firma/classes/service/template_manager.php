@@ -250,14 +250,8 @@ class template_manager {
         }
 
         $fields = [];
-        // Important: Moodle form repeat elements return arrays with numeric indices.
-        // We iterate using fieldlabel as the base, assuming all arrays are aligned by index.
         foreach ($data->fieldlabel as $idx => $label) {
-            
-            // Fix: fieldvalue sometimes comes empty if not filled, but source is selected.
-            // Also, fieldsource might be missing if default is used, but should be there if rendered.
-            
-            $source = $data->fieldsource[$idx] ?? 'fullname'; // Default in form is fullname
+            $source = $data->fieldsource[$idx] ?? 'fullname';
             
             $fields[] = [
                 'label' => $label,

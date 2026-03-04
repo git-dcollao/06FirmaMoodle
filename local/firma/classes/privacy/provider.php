@@ -74,7 +74,7 @@ class provider implements plugin_provider, user_preference_provider {
     }
 
     public static function delete_data_for_all_users_in_context(
-        \\context $context
+        \context $context
     ): void {
         // To be implemented when requirements are finalized.
     }

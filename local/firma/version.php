@@ -17,7 +17,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_firma';
-$plugin->version   = 2026021300; // YYYYMMDDXX.
+$plugin->version   = 2026022403; // YYYYMMDDXX.
 $plugin->requires  = 2024052700; // Moodle 5.1.
 $plugin->maturity  = MATURITY_ALPHA;
 $plugin->release   = '0.1.0-alpha';

@@ -145,6 +145,9 @@ if ($editingversion) {
         foreach ($fields as $idx => $field) {
             $draftdata->fieldlabel[$idx] = $field['label'];
             $draftdata->fieldsource[$idx] = $field['source'];
+            // Moodle repeat_elements registra selects con nombre 'fieldsource[N]'.
+            // set_data() con array no siempre resuelve la selección; forzamos las claves individuales.
+            $draftdata->{'fieldsource[' . $idx . ']'} = $field['source'];
             $draftdata->fieldpage[$idx] = $field['page'];
             $draftdata->fieldx[$idx] = $field['x'];
             $draftdata->fieldy[$idx] = $field['y'];
@@ -170,25 +173,26 @@ if ($form->is_cancelled()) {
 }
 
 if ($data = $form->get_data()) {
-    // CORRECCIÓN: Moodle puede filtrar valores de select dentro de repeat_elements.
-    // Forzamos fieldsource directamente desde $_POST para garantizar exactitud.
+    // Forzar fieldsource desde POST crudo para garantizar que Moodle repeat_elements lo recibe correctamente.
     $data->fieldsource = optional_param_array('fieldsource', [], PARAM_RAW);
 
     if ($editingversion) {
         // Handle update
         file_postupdate_standard_filemanager($data, 'pdffile', $fileoptions, $context, 'local_firma', 'templatepdf', $versionid);
-        
-        // If a new file was uploaded, update fileid record
+
+        // Si se subió un nuevo archivo, actualizar el fileid en el registro.
         $fs = get_file_storage();
         $files = $fs->get_area_files($context->id, 'local_firma', 'templatepdf', $versionid, '', false);
         if ($files) {
-            $file = reset($files); // Get the first (and only) file
-            // Update fileid only if it changed (or always, harmless)
-             $DB->set_field('local_firma_templatever', 'fileid', $file->get_id(), ['id' => $versionid]);
+            $file = reset($files);
+            $DB->set_field('local_firma_templatever', 'fileid', $file->get_id(), ['id' => $versionid]);
         }
-        
+
         $templatemanager->update_version($editingversion, $data);
-        redirect(new moodle_url('/local/firma/versions.php', ['id' => $templateid]), get_string('changessaved'));
+        redirect(
+            new moodle_url('/local/firma/versions.php', ['id' => $templateid, 'versionid' => $versionid]),
+            get_string('changessaved')
+        );
 
     } else {
         // Handle create

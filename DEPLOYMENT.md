@@ -36,7 +36,7 @@ cd C:\Users\Daniel Collao\Documents\Repositories\06FirmaMoodle
 
 Este script:
 1. Copia los archivos al servidor (10.20.10.3)
-2. Crea el nuevo Moodle en `/home/admintd/docker/moodle-nuevo`
+2. Crea el nuevo Moodle en `/home/admintd/docker/moodle`
 3. Levanta los contenedores
 4. Muestra las credenciales de acceso
 
@@ -44,14 +44,14 @@ Este script:
 
 1. Copiar archivos al servidor:
 ```powershell
-scp docker-compose.yml admintd@10.20.10.3:/home/admintd/docker/moodle-nuevo/
-scp deploy_new_moodle.sh admintd@10.20.10.3:/home/admintd/docker/moodle-nuevo/
+scp docker-compose.yml admintd@10.20.10.3:/home/admintd/docker/moodle/
+scp deploy_new_moodle.sh admintd@10.20.10.3:/home/admintd/docker/moodle/
 ```
 
 2. Conectarse y desplegar:
 ```bash
 ssh admintd@10.20.10.3
-cd /home/admintd/docker/moodle-nuevo
+cd /home/admintd/docker/moodle
 chmod +x deploy_new_moodle.sh
 ./deploy_new_moodle.sh
 ```
@@ -59,7 +59,7 @@ chmod +x deploy_new_moodle.sh
 ## Acceso
 
 Una vez desplegado, accede a:
-- **URL**: http://10.20.10.3:8081
+- **URL**: http://10.20.10.3:8083
 - **Usuario**: admin
 - **Password**: Admin123!
 
@@ -67,7 +67,7 @@ Una vez desplegado, accede a:
 
 ### Ver estado de los contenedores:
 ```bash
-cd /home/admintd/docker/moodle-nuevo
+cd /home/admintd/docker/moodle
 docker-compose ps
 ```
 
@@ -97,7 +97,7 @@ Si quieres restaurar los datos del Moodle anterior:
 
 1. **Restaurar base de datos**:
 ```bash
-cd /home/admintd/docker/moodle-nuevo
+cd /home/admintd/docker/moodle
 docker-compose stop moodle
 docker-compose exec -T mariadb mysql -u bn_moodle -pMoodleDBPass123! bitnami_moodle < /tmp/backup_moodle_db.sql
 docker-compose start moodle

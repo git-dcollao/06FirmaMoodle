@@ -15,9 +15,12 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 require_once(__DIR__ . '/../../config.php');
+require_once(__DIR__ . '/lib.php');
 
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    throw new moodle_exception('invalidrequest', 'core');
+}
 require_sesskey();
-require_post();
 
 $versionid = required_param('versionid', PARAM_INT);
 $signaturedata = required_param('signaturedata', PARAM_RAW);

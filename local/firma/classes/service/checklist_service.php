@@ -44,29 +44,35 @@ class checklist_service {
      * @throws dml_exception
      */
     public function evaluate(context_course $context, stdClass $templateversion, int $userid): array {
-        $course = get_course($context->instanceid);
+        $course    = get_course($context->instanceid);
         $completion = new completion_info($course);
-        $data = json_decode($templateversion->requiredactivitiesjson ?? '[]');
-        $items = [];
-        $eligible = true;
+        $modinfo   = get_fast_modinfo($course, $userid);
+        $data      = json_decode($templateversion->requiredactivitiesjson ?? '[]', false) ?? [];
+        $items     = [];
+        $eligible  = true;
 
         foreach ($data as $cmid) {
-            $coursemodule = $completion->get_course_module($cmid);
-            if (!$coursemodule) {
+            $cmid = (int)$cmid;
+            // Obtener el cm_info desde modinfo (no depende de completion_info).
+            if (!isset($modinfo->cms[$cmid])) {
                 continue;
             }
-            $item = (object) [
-                'cmid' => $cmid,
-                'name' => format_string($coursemodule->name),
+            $cm = $modinfo->cms[$cmid];
+
+            $item = (object)[
+                'cmid'     => $cmid,
+                'name'     => format_string($cm->name),
                 'complete' => false,
                 'progress' => 0,
             ];
-            $status = $completion->get_data($coursemodule, false, $userid);
+
+            // get_data() acepta un cm_info directamente.
+            $status = $completion->get_data($cm, false, $userid);
             if (!empty($status->completionstate)) {
-                $item->complete = true;
-                $item->progress = 100;
+                $item->complete  = true;
+                $item->progress  = 100;
             } else {
-                $eligible = false;
+                $eligible       = false;
                 $item->progress = $this->fetch_progress($templateversion->id, $cmid, $userid);
             }
             $items[] = $item;

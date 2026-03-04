@@ -37,8 +37,8 @@ define([], function() {
         ...field,
         id,
         page: Math.max(1, parseInt(field.page ?? defaults.page, 10) || 1),
-        x: parseFloat(field.x ?? defaults.x) || 0,
-        y: parseFloat(field.y ?? defaults.y) || 0,
+        x: Math.round(parseFloat(field.x ?? defaults.x) || 0),
+        y: Math.round(parseFloat(field.y ?? defaults.y) || 0),
         fontsize: parseFloat(field.fontsize ?? defaults.fontsize) || defaults.fontsize,
         width: parseFloat(field.width ?? defaults.width) || 0
     });
@@ -69,12 +69,16 @@ define([], function() {
         }
 
         // Verificar si PDF.js está disponible
-        if (typeof window.pdfjsLib === 'undefined') {
-            console.warn('PDF.js not loaded, editor may not work properly');
-            // Continuar de todas formas para que el formulario funcione
+        const hasPdfJs = typeof window.pdfjsLib !== 'undefined';
+        if (hasPdfJs) {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+                'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+        } else {
+            const warn = root.querySelector('[data-region="pdfjs-warning"]');
+            if (warn) {
+                warn.style.display = '';
+            }
         }
-
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = M.cfg.wwwroot + '/lib/pdfjs/pdf.worker.js';
 
         const canvas = document.getElementById('local-firma-editor-canvas');
         const overlay = root.querySelector('[data-region="overlay"]');
@@ -110,7 +114,7 @@ define([], function() {
             });
         };
 
-        const pxToMm = (px) => parseFloat((px * mmPerPx).toFixed(2));
+        const pxToMm = (px) => Math.round(px * mmPerPx);
         const mmToPx = (mm) => mm / mmPerPx;
 
         const getLabel = (key) => strings[key] || '';
@@ -284,9 +288,9 @@ define([], function() {
             } else if (event.target.classList.contains('field-page')) {
                 field.page = Math.max(1, parseInt(event.target.value, 10) || 1);
             } else if (event.target.classList.contains('field-x')) {
-                field.x = parseFloat(event.target.value) || 0;
+                field.x = Math.round(parseFloat(event.target.value) || 0);
             } else if (event.target.classList.contains('field-y')) {
-                field.y = parseFloat(event.target.value) || 0;
+                field.y = Math.round(parseFloat(event.target.value) || 0);
             } else if (event.target.classList.contains('field-fontsize')) {
                 field.fontsize = Math.max(6, parseFloat(event.target.value) || 12);
             } else if (event.target.classList.contains('field-width')) {
@@ -338,10 +342,30 @@ define([], function() {
         });
 
         const prepareDocument = () => {
+            if (!hasPdfJs) {
+                canvas.style.width = '595px';
+                canvas.style.height = '842px';
+                canvas.width = 595;
+                canvas.height = 842;
+                overlay.style.width = '595px';
+                overlay.style.height = '842px';
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#e9ecef';
+                ctx.fillRect(0, 0, 595, 842);
+                ctx.fillStyle = '#6c757d';
+                ctx.font = '14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Vista previa no disponible', 297, 421);
+                populatePageOptions(1);
+                renderBoxes();
+                return;
+            }
             window.pdfjsLib.getDocument(config.pdfUrl).promise.then((doc) => {
                 pdfDoc = doc;
                 populatePageOptions(doc.numPages);
                 renderPage();
+            }).catch((err) => {
+                console.error('local_firma/fieldeditor: error loading PDF', err);
             });
         };
 

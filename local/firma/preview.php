@@ -36,7 +36,42 @@ if ($mode === 'render') {
     require_sesskey();
     $service = new signature_service();
     $path = $service->generate_preview_pdf($versionid, $USER);
-    send_temp_file($path, 'local-firma-preview.pdf', false);
+    // Enviar como PDF inline (sin forzar descarga).
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: inline; filename="preview.pdf"');
+    header('Content-Length: ' . filesize($path));
+    header('Cache-Control: private, max-age=60');
+    readfile($path);
+    @unlink($path);
+    exit;
 }
 
-redirect(new moodle_url('/local/firma/versions.php', ['id' => $template->id]));
+// Mostrar página HTML con el PDF incrustado.
+$PAGE->set_url('/local/firma/preview.php', ['versionid' => $versionid]);
+$PAGE->set_context($context);
+$PAGE->set_title(get_string('preview_pdf', 'local_firma'));
+$PAGE->set_heading($course->fullname);
+
+$backurl = new moodle_url('/local/firma/versions.php', ['id' => $template->id]);
+
+$renderurl = new moodle_url('/local/firma/preview.php', [
+    'versionid' => $versionid,
+    'mode'      => 'render',
+    'sesskey'   => sesskey(),
+]);
+
+echo $OUTPUT->header();
+echo $OUTPUT->heading(get_string('preview_pdf', 'local_firma'));
+echo html_writer::tag('div',
+    html_writer::empty_tag('iframe', [
+        'src'         => $renderurl->out(false),
+        'style'       => 'width:100%;height:80vh;border:1px solid #ccc;border-radius:4px;',
+        'title'       => get_string('preview_pdf', 'local_firma'),
+    ]),
+    ['style' => 'width:100%;']
+);
+echo html_writer::div(
+    html_writer::link($backurl, get_string('back'), ['class' => 'btn btn-secondary mt-3']),
+    'mt-2'
+);
+echo $OUTPUT->footer();

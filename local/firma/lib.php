@@ -35,25 +35,40 @@ defined('LOCAL_FIRMA_MODULE_LINK') || define('LOCAL_FIRMA_MODULE_LINK', '/local/
  * @return void
  */
 function local_firma_extend_navigation_course($navigation, $course, $context) {
-    if (!has_capability('local/firma:managetemplates', $context)) {
+    // Docentes: van a gestión de plantillas.
+    if (has_capability('local/firma:managetemplates', $context)) {
+        $parentnode = $navigation->find('localplugins', navigation_node::TYPE_CONTAINER);
+        if (!$parentnode) {
+            $parentnode = $navigation;
+        }
+        $url = new moodle_url('/local/firma/manage.php', ['courseid' => $course->id]);
+        $parentnode->add(
+            get_string('pluginname', 'local_firma'),
+            $url,
+            navigation_node::TYPE_CUSTOM,
+            null,
+            'local_firma',
+            new pix_icon('i/report', '')
+        );
         return;
     }
 
-    // Try adding to localplugins first, fall back to course root.
-    $parentnode = $navigation->find('localplugins', navigation_node::TYPE_CONTAINER);
-    if (!$parentnode) {
-        $parentnode = $navigation;
+    // Alumnos: van a la página de documentos del curso.
+    if (has_capability('local/firma:sign', $context)) {
+        $parentnode = $navigation->find('localplugins', navigation_node::TYPE_CONTAINER);
+        if (!$parentnode) {
+            $parentnode = $navigation;
+        }
+        $url = new moodle_url('/local/firma/course.php', ['courseid' => $course->id]);
+        $parentnode->add(
+            get_string('pluginname', 'local_firma'),
+            $url,
+            navigation_node::TYPE_CUSTOM,
+            null,
+            'local_firma_student',
+            new pix_icon('i/edit', '')
+        );
     }
-
-    $url = new moodle_url(LOCAL_FIRMA_MODULE_LINK, ['courseid' => $course->id]);
-    $parentnode->add(
-        get_string('pluginname', 'local_firma'),
-        $url,
-        navigation_node::TYPE_CUSTOM,
-        null,
-        'local_firma',
-        new pix_icon('i/report', '')
-    );
 }
 
 /**

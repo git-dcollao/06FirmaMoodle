@@ -76,18 +76,34 @@ if ($file) {
         'fields' => array_values($fields),
         'fieldOptions' => $templatemanager->get_field_sources(),
     ];
-    
-    // Inicializar el módulo AMD sin pasar datos grandes
+
     $PAGE->requires->js_call_amd('local_firma/fieldeditor', 'init');
 }
 
 echo $OUTPUT->header();
 
+// Cargar PDF.js desde CDN antes de que arranque el módulo AMD.
+echo html_writer::tag('script', '', [
+    'src' => 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js',
+    'crossorigin' => 'anonymous',
+]);
+
 echo $OUTPUT->heading(format_string($template->name) . ' · v' . (int)$version->version);
 
 echo html_writer::link($backurl, get_string('back'));
 
-echo $OUTPUT->box(get_string('fieldeditor_instructions', 'local_firma'));
+// Panel de instrucciones con pasos claros.
+echo html_writer::div(
+    html_writer::tag('h6', get_string('fieldeditor', 'local_firma'), ['class' => 'mb-2']) .
+    html_writer::tag('ol',
+        html_writer::tag('li', get_string('fieldeditor_step1', 'local_firma')) .
+        html_writer::tag('li', get_string('fieldeditor_step2', 'local_firma')) .
+        html_writer::tag('li', get_string('fieldeditor_step3', 'local_firma')) .
+        html_writer::tag('li', get_string('fieldeditor_step4', 'local_firma')),
+        ['class' => 'mb-0 ps-3']
+    ),
+    'alert alert-info mb-3'
+);
 
 if (!$file) {
     echo $OUTPUT->notification(get_string('preview_notavailable', 'local_firma'), 'error');
@@ -132,6 +148,9 @@ if (!$file) {
             <div class="local-firma-editor-canvas">
                 <canvas id="local-firma-editor-canvas"></canvas>
                 <div class="local-firma-field-overlay" data-region="overlay"></div>
+                <div data-region="pdfjs-warning" class="alert alert-warning m-2" style="display:none">
+                    <?php echo get_string('fieldeditor_nopdfjs', 'local_firma'); ?>
+                </div>
             </div>
         </div>
         <div class="local-firma-fieldlist" id="local-firma-fieldlist"></div>
